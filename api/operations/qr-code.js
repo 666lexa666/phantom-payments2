@@ -78,7 +78,7 @@ router.post("/", async (req, res) => {
         body: JSON.stringify({
           amount: totalAmount,
           customer_email: "test@mail.com",
-          callback_url: "https://www.host.com/callback",
+          callback_url: "https://phantom-payments2.onrender.com/api/webhook",
         }),
       }
     );

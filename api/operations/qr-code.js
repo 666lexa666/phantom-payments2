@@ -50,7 +50,6 @@ router.post("/", async (req, res) => {
       // создаем нового клиента
       const { error: insertErr } = await supabase.from("clients2").insert([
         {
-          id: Math.floor(10000000 + Math.random() * 90000000), // 8-значный id
           client_id,
           api_login: apiLogin,
           total_amount: totalAmount,

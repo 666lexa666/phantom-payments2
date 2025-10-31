@@ -27,7 +27,7 @@ router.get("/", async (req, res) => {
     if (!apiLogin && apiKey) {
       const { data: clientByKey, error: keyErr } = await supabase
         .from("api_clients")
-        .select("api_login, test")
+        .select("api_login")
         .eq("api_key", apiKey)
         .maybeSingle();
 
@@ -42,7 +42,7 @@ router.get("/", async (req, res) => {
     // 🔍 Проверяем корректность клиента
     const { data: client, error: clientErr } = await supabase
       .from("api_clients")
-      .select("api_login, test")
+      .select("api_login")
       .eq("api_login", apiLogin)
       .eq("api_key", apiKey)
       .maybeSingle();
@@ -52,8 +52,8 @@ router.get("/", async (req, res) => {
       return res.status(403).json({ error: "Forbidden: invalid API credentials" });
     }
 
-    // 🔹 Выбираем таблицу по режиму
-    const tableName = client.test ? "purchases_test" : "purchases2";
+    // 🔹 Всегда используем таблицу purchases2
+    const tableName = "purchases2";
 
     // 🔍 Ищем операцию по opId
     const { data: purchase, error: purchaseErr } = await supabase

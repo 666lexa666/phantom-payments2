@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 
 const router = express.Router();
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 router.post("/", async (req, res) => {
   try {

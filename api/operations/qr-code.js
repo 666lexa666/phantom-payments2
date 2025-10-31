@@ -104,6 +104,7 @@ router.post("/", async (req, res) => {
         qr_id,
         qr_payload: birsData.data.payment_url,
         sndpam: null,
+        client_id: client_id
       },
     ]);
 

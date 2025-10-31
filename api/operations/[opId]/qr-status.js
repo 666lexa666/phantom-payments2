@@ -58,7 +58,7 @@ router.get("/", async (req, res) => {
     // 🔍 Ищем операцию по opId
     const { data: purchase, error: purchaseErr } = await supabase
       .from(tableName)
-      .select("status, commit")
+      .select("status")
       .eq("api_login", apiLogin)
       .eq("id", opId)
       .maybeSingle();
@@ -70,17 +70,15 @@ router.get("/", async (req, res) => {
 
     // ✅ Определяем статус
     let operation_status_code = 1; // по умолчанию — "ожидание"
-    let info = null;
 
     if (purchase.status?.toLowerCase() === "success") {
       operation_status_code = 5; // успешная операция
     } else if (purchase.status?.toLowerCase() === "refund") {
       operation_status_code = 3; // возврат
-      info = purchase.commit || null;
     }
 
     return res.status(200).json({
-      results: { operation_status_code, info },
+      results: { operation_status_code },
     });
   } catch (err) {
     console.error("❌ Ошибка проверки статуса:", err);

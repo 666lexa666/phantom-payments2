@@ -71,12 +71,7 @@ router.post("/", async (req, res) => {
 
     console.log("✅ Purchase updated:", updatedPurchase);
 
-    return res.status(200).json({
-      message: "Purchase status updated",
-      id,
-      newStatus,
-      updatedPurchase,
-    });
+    return res.sendStatus(200);
   } catch (err) {
     console.error("❌ Ошибка webhook:", err);
     return res.status(500).json({ error: "Internal server error" });

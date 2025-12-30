@@ -2,9 +2,13 @@ import express from "express";
 import fetch from "node-fetch";
 import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
+import { generateCustomerEmail } from "../../utils/emailGenerator.js";
 
 const router = express.Router();
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 router.post("/", async (req, res) => {
   try {
@@ -21,11 +25,11 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Missing API credentials" });
     }
 
-    // Если есть только apiKey, ищем apiLogin в БД
+    // Если есть только apiKey — ищем apiLogin
     if (!apiLogin && apiKey) {
       const { data: clientByKey, error: keyErr } = await supabase
         .from("api_clients")
-        .select("api_login, second_server_url")
+        .select("api_login")
         .eq("api_key", apiKey)
         .maybeSingle();
 
@@ -37,8 +41,8 @@ router.post("/", async (req, res) => {
       apiLogin = clientByKey.api_login;
     }
 
-    // Работа с clients
-    let { data: clientData } = await supabase
+    // Работа с clients2
+    const { data: clientData } = await supabase
       .from("clients2")
       .select("*")
       .eq("client_id", client_id)
@@ -47,7 +51,6 @@ router.post("/", async (req, res) => {
     const totalAmount = sum / 100;
 
     if (!clientData) {
-      // создаем нового клиента
       const { error: insertErr } = await supabase.from("clients2").insert([
         {
           client_id,
@@ -57,39 +60,62 @@ router.post("/", async (req, res) => {
       ]);
       if (insertErr) throw insertErr;
     } else {
-      // обновляем total_amount
       const { error: updateErr } = await supabase
         .from("clients2")
         .update({ total_amount: clientData.total_amount + totalAmount })
         .eq("client_id", client_id);
+
       if (updateErr) throw updateErr;
     }
 
-    // POST-запрос к BIRS
+    // ============================
+    // Генерация email (1 запрос = 1 email)
+    // ============================
+    const customerEmail = generateCustomerEmail();
+
+    // ============================
+    // Формируем payload для BIRS
+    // ============================
+    const birsPayload = {
+      amount: totalAmount,
+      customer_email: customerEmail,
+      callback_url: "https://phantom-payments2.onrender.com/api/webhook",
+    };
+
+    // 🔍 ЛОГ ЗАПРОСА В BIRS
+    console.log("➡️ BIRS request payload:", birsPayload);
+
+    // ============================
+    // Запрос к BIRS
+    // ============================
     const birsResponse = await fetch(
-      "https://admin.birs.app/v2.1/payment-test/create-link-payment",
+      "https://example.com",
       {
         method: "POST",
         headers: {
-          "accept": "application/json",
+          accept: "application/json",
           "Content-Type": "application/json",
           "X-Api-Key": process.env.BIRS_API_KEY,
         },
-        body: JSON.stringify({
-          amount: totalAmount,
-          customer_email: "cheunchomv@icloud.com",
-          callback_url: "https://phantom-payments2.onrender.com/api/webhook",
-        }),
+        body: JSON.stringify(birsPayload),
       }
     );
 
     const birsData = await birsResponse.json();
 
+    // 🔍 ЛОГ ОТВЕТА BIRS
+    console.log("⬅️ BIRS response:", birsData);
+
     if (!birsData.success) {
-      return res.status(500).json({ error: "BIRS API error", details: birsData });
+      return res.status(500).json({
+        error: "BIRS API error",
+        details: birsData,
+      });
     }
 
+    // ============================
     // Вставка в purchases2
+    // ============================
     const qr_id = uuidv4();
     const purchaseId = birsData.data.id;
 
@@ -104,7 +130,8 @@ router.post("/", async (req, res) => {
         qr_id,
         qr_payload: birsData.data.payment_url,
         sndpam: null,
-        client_id: client_id
+        client_id: client_id,
+        customer_email: customerEmail, // 👈 советую сохранить
       },
     ]);
 
@@ -118,7 +145,7 @@ router.post("/", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    console.error("❌ qr-code error:", err);
     res.status(500).json({ error: err.message });
   }
 });

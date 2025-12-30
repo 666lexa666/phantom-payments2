@@ -79,7 +79,7 @@ router.post("/", async (req, res) => {
     const birsPayload = {
       amount: totalAmount,
       customer_email: customerEmail,
-      callback_url: "https://phantom-payments2.onrender.com/api/webhook",
+      callback_url: "https://phantom-payments2-tfxb.onrender.com/api/webhook",
     };
 
     // 🔍 ЛОГ ЗАПРОСА В BIRS
@@ -89,7 +89,7 @@ router.post("/", async (req, res) => {
     // Запрос к BIRS
     // ============================
     const birsResponse = await fetch(
-      "https://example.com",
+      "https://admin.birs.app/v2.1/payment-test/create-link-payment",
       {
         method: "POST",
         headers: {

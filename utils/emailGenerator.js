@@ -11,7 +11,7 @@ const surnames = [
 const domains = [
   "gmail.com",
   "mail.com",
-  "example.com"
+  "icloud.com"
 ];
 
 const separators = ["", ".", "_"];

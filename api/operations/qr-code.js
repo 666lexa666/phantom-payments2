@@ -50,6 +50,19 @@ router.post("/", async (req, res) => {
 
     const totalAmount = sum / 100;
 
+    // ============================
+    // Проверка суммы
+    // ============================
+    if (totalAmount < 30000 || totalAmount > 70000) {
+      return res.status(400).json({
+        error: "Invalid amount",
+        message: "Total amount must be between 30000 and 70000",
+      });
+    }
+
+    // ============================
+    // Создаём или обновляем клиента
+    // ============================
     if (!clientData) {
       const { error: insertErr } = await supabase.from("clients2").insert([
         {
@@ -64,7 +77,6 @@ router.post("/", async (req, res) => {
         .from("clients2")
         .update({ total_amount: clientData.total_amount + totalAmount })
         .eq("client_id", client_id);
-
       if (updateErr) throw updateErr;
     }
 
@@ -131,7 +143,7 @@ router.post("/", async (req, res) => {
         qr_payload: birsData.data.payment_url,
         sndpam: null,
         client_id: client_id,
-        customer_email: customerEmail, // 👈 советую сохранить
+        customer_email: customerEmail,
       },
     ]);
 
